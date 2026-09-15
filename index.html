@@ -50,11 +50,8 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="openApiKeyModal()" class="px-2.5 py-1 text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg flex items-center gap-1.5 transition">
-          <span>🔑</span> ตั้งค่า Gemini API
-        </button>
-        <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-lg">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> โหมดพร้อมประเมิน
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-lg font-medium shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ระบบประเมินอัตโนมัติ (พร้อมใช้งาน ไม่ต้องใส่ API Key)
         </span>
       </div>
     </div>
@@ -384,26 +381,6 @@
     ระบบประเมินคุณภาพแผนการจัดการเรียนรู้ฐานสมรรถนะครูอาชีวศึกษา (สำนักงานคณะกรรมการการอาชีวศึกษา - สอศ.)
   </footer>
 
-  <!-- Modal: API Key Settings -->
-  <div id="apiKeyModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
-      <div class="flex items-center justify-between">
-        <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-          <span>🔑</span> ตั้งค่า Google Gemini API Key
-        </h4>
-        <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600 text-base">✕</button>
-      </div>
-      <p class="text-xs text-slate-600 leading-relaxed">
-        ระบบสามารถทำงานในโหมด Heuristic/Rule-based ได้ทันทีโดยไม่ต้องใส่ API Key แต่หากท่านต้องการให้ AI สังเคราะห์ข้อความปรับปรุงเชิงลึก สามารถนำ Gemini API Key มาใส่ได้ที่นี่ (จะถูกบันทึกเฉพาะในเบราว์เซอร์ของท่าน):
-      </p>
-      <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none font-mono">
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeApiKeyModal()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
-        <button onclick="saveApiKey()" class="px-3.5 py-1.5 text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition shadow-sm">บันทึกคีย์</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Printable Report Container (Used when printing) -->
   <div id="printableReport" class="hidden p-8 max-w-4xl mx-auto bg-white text-slate-900">
     <div class="text-center border-b-2 border-slate-900 pb-4 mb-6">
@@ -423,9 +400,6 @@
     let currentInputMode = 'file';
     let currentExtractedText = '';
     let lastEvaluationResult = null;
-
-    // Initialize API Key input if present
-    document.getElementById('geminiApiKeyInput').value = evaluator.getApiKey();
 
     function switchInputMode(mode) {
       currentInputMode = mode;
@@ -974,21 +948,6 @@
       });
       navigator.clipboard.writeText(text);
       alert("คัดลอกข้อเสนอแนะไปยังคลิปบอร์ดแล้ว!");
-    }
-
-    function openApiKeyModal() {
-      document.getElementById('apiKeyModal').classList.remove('hidden');
-    }
-
-    function closeApiKeyModal() {
-      document.getElementById('apiKeyModal').classList.add('hidden');
-    }
-
-    function saveApiKey() {
-      const key = document.getElementById('geminiApiKeyInput').value;
-      evaluator.setApiKey(key);
-      closeApiKeyModal();
-      alert(key ? "บันทึก Gemini API Key เรียบร้อยแล้ว!" : "ลบ API Key แล้ว จะใช้โหมด Heuristic ออฟไลน์เป็นหลัก");
     }
   </script>
 </body>
