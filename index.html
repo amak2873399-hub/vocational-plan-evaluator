@@ -14,6 +14,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <!-- PDF.js for PDF parsing in browser -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- html2pdf.js for client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script>
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -351,13 +353,19 @@
           <!-- Bottom Action Buttons -->
           <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 border border-slate-200 rounded-2xl">
             <span class="text-xs text-slate-500">
-              📌 ผลการประเมินสามารถพิมพ์เพื่อประกอบการยื่นรายงาน ว.PA หรือส่งฝ่ายวิชาการ
+              📌 ดาวน์โหลดรายงานสำหรับใช้แนบ ว.PA หรือส่งฝ่ายวิชาการ/หัวหน้าแผนก:
             </span>
-            <div class="flex items-center gap-2">
-              <button onclick="triggerPrintReport()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
-                <span>🖨️</span> พิมพ์ / ดาวน์โหลดรายงานสรุป
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="downloadPDFReport()" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <span>📥</span> ดาวน์โหลด PDF (.pdf)
               </button>
-              <button onclick="copyFeedbackText()" class="px-3.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+              <button onclick="downloadWordReport()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <span>📝</span> ดาวน์โหลด Word (.doc)
+              </button>
+              <button onclick="triggerPrintReport()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <span>🖨️</span> สั่งพิมพ์
+              </button>
+              <button onclick="copyFeedbackText()" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
                 <span>📋</span> คัดลอกข้อเสนอแนะ
               </button>
             </div>
@@ -707,6 +715,245 @@
       activeBtn.classList.add('border-sky-600', 'text-sky-700', 'bg-white');
     }
 
+    function generateOfficialReportHTML(res) {
+      const d = res.dimensions;
+      return `
+        <div style="font-family: 'Sarabun', 'TH Sarabun PSK', sans-serif; color: #1e293b; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 24px; background: #ffffff;">
+          <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px;">
+            <div style="font-size: 20px; font-weight: bold; color: #0f172a;">แบบรายงานผลการวิเคราะห์และประเมินคุณภาพแผนการจัดการเรียนรู้ฐานสมรรถนะ</div>
+            <div style="font-size: 14px; color: #334155; margin-top: 4px;">สำนักงานคณะกรรมการการอาชีวศึกษา (สอศ.) กระทรวงศึกษาธิการ</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">ประเมินตามกรอบมาตรฐานหลักสูตร ปวช./ปวส. พุทธศักราช 2567 และ ว.PA</div>
+          </div>
+
+          <!-- ข้อมูลรายวิชา -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 13px;">
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; width: 25%; font-weight: bold;">รหัสและชื่อวิชา:</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; width: 75%;">${res.metadata.subjectCode} ${res.metadata.subjectName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">หน่วยการเรียนรู้:</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">${res.metadata.unitName} (ระดับ ${res.metadata.curriculumLevel})</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">คะแนนรวมทั้งสิ้น:</td>
+              <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">
+                <strong style="font-size: 16px; color: #0284c7;">${res.overallScore} / 100 คะแนน</strong> 
+                &nbsp;—&nbsp; 
+                <span style="font-weight: bold; color: #059669;">ระดับ ${res.qualityGrade}</span>
+              </td>
+            </tr>
+          </table>
+
+          <!-- ตาราง 5 มิติ -->
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #0f172a;">1. ผลการประเมินรายมิติคุณภาพ (5 มิติ รวม 100 คะแนน)</div>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 12px;">
+            <thead>
+              <tr style="background: #e2e8f0; color: #1e293b; text-align: left;">
+                <th style="padding: 8px; border: 1px solid #cbd5e1; width: 45%;">มิติการประเมินตามมาตรฐาน สอศ.</th>
+                <th style="padding: 8px; border: 1px solid #cbd5e1; width: 12%; text-align: center;">เต็ม</th>
+                <th style="padding: 8px; border: 1px solid #cbd5e1; width: 12%; text-align: center;">คะแนนที่ได้</th>
+                <th style="padding: 8px; border: 1px solid #cbd5e1; width: 31%;">ผลการวินิจฉัยเชิงคุณภาพ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">1. ความสอดคล้องของหลักสูตรฐานสมรรถนะ</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">20</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #0284c7;">${d.d1.score}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-size: 11px;">สอดคล้องคำอธิบายรายวิชาและมาตรฐานวิชาชีพ</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">2. จุดประสงค์เชิงพฤติกรรม (K-P-A)</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">20</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #059669;">${d.d2.score}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-size: 11px;">ครอบคลุมความรู้ ทักษะปฏิบัติ และกิจนิสัย</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">3. กิจกรรมการเรียนรู้เชิงปฏิบัติ (Active Learning)</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">20</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #2563eb;">${d.d3.score}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-size: 11px;">สัดส่วนลงมือปฏิบัติงานจริง &ge; 60% มีกระบวนการแก้ปัญหา</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">4. สื่อ ใบสั่งงาน (Job Sheet) และความปลอดภัย</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">20</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #9333ea;">${d.d4.score}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-size: 11px;">มีขั้นตอนปฏิบัติ เครื่องมือจริง และมาตรการ 5ส</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">5. การวัดผลตามสภาพจริง และบันทึกหลังสอน</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center;">20</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #d97706;">${d.d5.score}</td>
+                <td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-size: 11px;">มีเกณฑ์รูบริก แบบสังเกตจิตพิสัย และแนวทางวิจัยชั้นเรียน</td>
+              </tr>
+              <tr style="background: #f8fafc; font-weight: bold;">
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">รวมคะแนนทั้งสิ้น</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">100</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; color: #0284c7; font-size: 14px;">${res.overallScore}</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; color: #059669;">ระดับ ${res.qualityGrade}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- ความปลอดภัยและ 5ส -->
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #0f172a;">2. ผลการตรวจสอบมาตรการความปลอดภัยและ 5ส (Safety Audit)</div>
+          <div style="padding: 10px 14px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 6px; font-size: 12px; margin-bottom: 18px;">
+            <p style="margin: 0 0 6px 0;"><strong>สรุปผลการตรวจสอบ:</strong> ${res.safetyAudit.summary}</p>
+            <div style="display: flex; gap: 16px; font-size: 11px;">
+              <span>• กฎความปลอดภัยในใบงาน: <strong>${res.safetyAudit.safetyMentioned ? '✓ ผ่านเกณฑ์' : '✗ ควรเพิ่มคำเตือน'}</strong></span>
+              <span>• การบูรณาการกิจกรรม 5ส: <strong>${res.safetyAudit.fiveSMentioned ? '✓ มีในแผน' : '✗ ควรเพิ่ม'}</strong></span>
+              <span>• ใบสั่งงาน (Job Sheet): <strong>${res.safetyAudit.jobSheetFound ? '✓ ครบถ้วน' : '✗ ขาดใบงาน'}</strong></span>
+            </div>
+          </div>
+
+          <!-- ข้อเสนอแนะ AI Coaching -->
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #0f172a;">3. ข้อเสนอแนะเพื่อการปรับปรุงและพัฒนา (Actionable Recommendations)</div>
+          <div style="margin-bottom: 18px;">
+            ${res.recommendations && res.recommendations.length > 0 ? res.recommendations.map((r, i) => `
+              <div style="border: 1px solid #fde68a; background: #fffbeb; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 12px;">
+                <div style="font-weight: bold; color: #92400e; margin-bottom: 3px;">ประเด็นที่ ${i+1}: ${r.dimension} — ${r.title}</div>
+                <div style="color: #475569; margin-bottom: 3px;"><strong>ข้อความเดิมในแผน:</strong> "${r.currentText}"</div>
+                <div style="background: #ffffff; border-left: 3px solid #10b981; padding: 6px 10px; margin: 4px 0; color: #065f46;">
+                  <strong>ข้อความแนะนำตามมาตรฐาน สอศ.:</strong> "${r.suggestedText}"
+                </div>
+                <div style="color: #78350f; font-size: 11px;"><strong>เหตุผลทางวิชาการ:</strong> ${r.reasoning}</div>
+              </div>
+            `).join('') : '<p style="font-size: 12px; color: #059669;">แผนการจัดการเรียนรู้นี้มีความสมบูรณ์ตามเกณฑ์มาตรฐาน สอศ.</p>'}
+          </div>
+
+          <!-- จุดเด่น -->
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #0f172a;">4. จุดเด่นของแผนการจัดการเรียนรู้ (Strengths)</div>
+          <ul style="font-size: 12px; color: #334155; margin-bottom: 26px; padding-left: 20px;">
+            ${res.strengths.map(s => `<li style="margin-bottom: 4px;">${s}</li>`).join('')}
+          </ul>
+
+          <!-- ส่วนลงนามท้ายรายงาน -->
+          <table style="width: 100%; text-align: center; font-size: 12px; margin-top: 30px; border-collapse: collapse;">
+            <tr>
+              <td style="width: 50%; padding-bottom: 50px;">
+                (ลงชื่อ)........................................................<br>
+                ผู้จัดทำแผนการจัดการเรียนรู้<br>
+                วันที่ ........./........./............
+              </td>
+              <td style="width: 50%; padding-bottom: 50px;">
+                (ลงชื่อ)........................................................<br>
+                หัวหน้าแผนกวิชา / ผู้ประเมิน<br>
+                วันที่ ........./........./............
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+    }
+
+    function downloadPDFReport() {
+      if (!lastEvaluationResult) {
+        alert("ยังไม่มีผลการประเมิน กรุณาแนบไฟล์หรือเลือกแผนตัวอย่างแล้วกดวิเคราะห์ก่อนครับ");
+        return;
+      }
+      const res = lastEvaluationResult;
+      const htmlContent = generateOfficialReportHTML(res);
+
+      const cleanSubject = (res.metadata.subjectName || 'วิชา').replace(/[\/\\:*?"<>|]/g, '_');
+      const filename = `รายงานประเมิน_${res.metadata.subjectCode || 'สอศ'}_${cleanSubject}.pdf`;
+
+      // Temporary element for rendering
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      tempDiv.style.width = '750px';
+      tempDiv.innerHTML = htmlContent;
+      document.body.appendChild(tempDiv);
+
+      if (window.html2pdf) {
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(tempDiv).save().then(() => {
+          document.body.removeChild(tempDiv);
+        }).catch(err => {
+          console.warn("html2pdf failed, using print dialog:", err);
+          document.body.removeChild(tempDiv);
+          triggerPrintReport();
+        });
+      } else {
+        document.body.removeChild(tempDiv);
+        triggerPrintReport();
+      }
+    }
+
+    function downloadWordReport() {
+      if (!lastEvaluationResult) {
+        alert("ยังไม่มีผลการประเมิน กรุณาแนบไฟล์หรือเลือกแผนตัวอย่างแล้วกดวิเคราะห์ก่อนครับ");
+        return;
+      }
+      const res = lastEvaluationResult;
+      const htmlContent = generateOfficialReportHTML(res);
+
+      const cleanSubject = (res.metadata.subjectName || 'วิชา').replace(/[\/\\:*?"<>|]/g, '_');
+      const filename = `รายงานประเมิน_${res.metadata.subjectCode || 'สอศ'}_${cleanSubject}.doc`;
+
+      const wordHeader = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+              xmlns:w='urn:schemas-microsoft-com:office:word' 
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>รายงานผลการประเมินคุณภาพแผนการจัดการเรียนรู้</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 2cm 2cm 2cm 2cm;
+              mso-page-orientation: portrait;
+            }
+            body {
+              font-family: 'TH Sarabun PSK', 'Sarabun', Arial, sans-serif;
+              font-size: 16pt;
+              line-height: 1.5;
+              color: #000;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 6px 8px;
+            }
+          </style>
+        </head>
+        <body>
+      `;
+      const wordFooter = `</body></html>`;
+
+      const fullWordHtml = wordHeader + htmlContent + wordFooter;
+      const blob = new Blob(['\ufeff' + fullWordHtml], {
+        type: 'application/msword;charset=utf-8'
+      });
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     function triggerPrintReport() {
       if (!lastEvaluationResult) {
         alert("ยังไม่มีผลการประเมิน");
@@ -714,25 +961,7 @@
       }
       const res = lastEvaluationResult;
       const printContainer = document.getElementById('printReportContent');
-      printContainer.innerHTML = `
-        <div class="border p-4 rounded mb-4">
-          <p><strong>รหัสวิชา:</strong> ${res.metadata.subjectCode} <strong>ชื่อวิชา:</strong> ${res.metadata.subjectName}</p>
-          <p><strong>หน่วยการเรียนรู้:</strong> ${res.metadata.unitName}</p>
-          <p><strong>คะแนนรวม:</strong> ${res.overallScore} / 100 คะแนน (<strong>${res.qualityGrade}</strong>)</p>
-        </div>
-        <h3 class="font-bold text-base mb-2">คะแนนรายมิติ (5 ด้าน):</h3>
-        <ul class="list-disc pl-5 mb-4">
-          <li>1. ฐานสมรรถนะวิชาชีพ: ${res.dimensions.d1.score} / 20</li>
-          <li>2. จุดประสงค์ K-P-A: ${res.dimensions.d2.score} / 20</li>
-          <li>3. กิจกรรมการเรียนรู้เชิงปฏิบัติ (Active Learning): ${res.dimensions.d3.score} / 20</li>
-          <li>4. สื่อ ใบสั่งงาน (Job Sheet) และความปลอดภัย: ${res.dimensions.d4.score} / 20</li>
-          <li>5. การวัดผลตามสภาพจริง และบันทึกหลังสอน: ${res.dimensions.d5.score} / 20</li>
-        </ul>
-        <h3 class="font-bold text-base mb-2">ข้อเสนอแนะเพื่อการปรับปรุง:</h3>
-        <ol class="list-decimal pl-5">
-          ${res.recommendations.map(r => `<li><strong>${r.dimension}:</strong> ${r.suggestedText}</li>`).join('')}
-        </ol>
-      `;
+      printContainer.innerHTML = generateOfficialReportHTML(res);
       window.print();
     }
 
