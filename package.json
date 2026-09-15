@@ -1,0 +1,19 @@
+{
+  "name": "vocational-plan-evaluator",
+  "version": "1.0.0",
+  "description": "ระบบประเมินคุณภาพแผนการจัดการเรียนรู้ฐานสมรรถนะ ครูอาชีวศึกษา (สอศ.)",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "build": "echo 'Static app ready for deployment'"
+  },
+  "keywords": [
+    "vocational-education",
+    "lesson-plan-evaluator",
+    "ovec",
+    "ai-education",
+    "competency-based"
+  ],
+  "author": "OVEC AI Team",
+  "license": "MIT"
+}
